@@ -1,0 +1,70 @@
+<%#
+# Code Review plugin for Redmine
+# Copyright (C) 2009-2011  Haruyuki Iida
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+%>
+
+<script type="text/javascript">
+<% @changesets.each do |changeset| %>
+  <%
+  if changeset.review_count > 0
+    progress = '<span style="white-space: nowrap">' + progress_bar([changeset.closed_review_pourcent, changeset.completed_review_pourcent],
+      :width => '60px',
+      :legend => "#{sprintf("%0.1f", changeset.completed_review_pourcent)}%") + '</span>' +
+      '<p class="progress-info">' + "#{changeset.closed_review_count} #{l(:label_closed_issues)}" +
+      "   #{changeset.open_review_count} #{l(:label_open_issues)}" + '</p>'
+  elsif changeset.assignment_count > 0
+    if (changeset.open_assignment_count > 0)
+      progress = '<p class="progress-info">' + l(:code_review_assigned) + '</p>'
+    else
+      progress = '<p class="progress-info">' + l(:code_review_reviewed) + '</p>'
+    end
+    
+  else
+    progress = '<p class="progress-info">' + l(:lable_no_code_reviews) + '</p>'
+  end
+%>
+
+    var count = new ReviewCount(<%=  changeset.review_count %>, <%=  changeset.open_review_count %>, '<%=  progress %>');
+
+    review_counts['revision_<%=changeset.identifier %>'] = count;
+<% end %>
+  UpdateRepositoryView('<%=l(:code_reviews)%>');
+  var changeset_ids = '';
+  var idlinks = $$('tr.changeset td.id a');
+  for (var i = 0; i < idlinks.length; i++) {
+    var link = idlinks[i];
+    var href = link.getAttribute('href');
+  }
+  var links = $$('p.pagination a');
+  var url = "<%= url_for( url_for :controller => 'code_review', :action => 'update_revisions_view', :id => @project) %>";
+
+  for (var i = 0; i < links.length; i++) {
+    var link = links[i];
+    //var href = link.getAttribute('href');
+    var onclick = link.getAttribute('onclick');
+    if (onclick.indexOf('onComplete:') > 0) {
+      onclick = onclick.replace('onComplete:function(request){window.scrollTo(0,0)}', "onComplete:function(request){window.scrollTo(0,0);call_update_revisions('"+ url + "')}");
+    }
+    else {
+      onclick = onclick.replace('}); return false;', 'onComplete:function(request){call_update_revisions("'+ url + '")}); return false;');
+    }
+    link.setAttribute('onclick', onclick);
+  }
+
+</script>
+
+
