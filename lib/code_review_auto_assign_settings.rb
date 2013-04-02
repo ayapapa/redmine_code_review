@@ -1,5 +1,5 @@
 # Code Review plugin for Redmine
-# Copyright (C) 2009-2010  Haruyuki Iida
+# Copyright (C) 2009-2012  Haruyuki Iida
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -67,7 +67,7 @@ module CodeReviewAutoAssignSettings
     end
 
     def description
-      yml[:description]
+      Redmine::CodesetUtil.to_utf8_by_setting(yml[:description])
     end
 
     def subject=(sbj)
@@ -75,7 +75,7 @@ module CodeReviewAutoAssignSettings
     end
 
     def subject
-      yml[:subject]
+      Redmine::CodesetUtil.to_utf8_by_setting(yml[:subject])
     end
 
     def filter_enabled=(flag)
@@ -126,7 +126,7 @@ module CodeReviewAutoAssignSettings
 
     def match_with_changeset?(changeset)
       return true unless filter_enabled?
-      changeset.changes.each{|change|
+      changeset.filechanges.each{|change|
         return if match_with_change?(change)  
       }
       return false
@@ -134,7 +134,7 @@ module CodeReviewAutoAssignSettings
 
     def match_with_change?(change)
       filters.each { |filter|
-        next unless filter.match?(change.path)
+        next unless filter.match?(change.relative_path)
         return filter.accept?
       }
       return accept_for_default
@@ -164,7 +164,7 @@ module CodeReviewAutoAssignSettings
       list.collect!{|item| item.to_i}
       list.delete(commiter_id)
       return nil if list.empty?
-      assign_to = list.choice
+      assign_to = list.at(rand(list.size))
       project.users.each do |user|
         return assign_to if assign_to.to_i == user.id
       end
